@@ -29,6 +29,7 @@ ERROR_RATE_THRESHOLD = float(os.getenv("ERROR_RATE_THRESHOLD", "2"))
 WINDOW_SIZE = int(os.getenv("WINDOW_SIZE", "200"))
 ALERT_COOLDOWN_SEC = int(os.getenv("ALERT_COOLDOWN_SEC", "300"))
 MAINTENANCE_MODE = os.getenv("MAINTENANCE_MODE", "false").lower() in ("1", "true", "yes")
+WATCHER_DEBUG = os.getenv("WATCHER_DEBUG", "false").lower() in ("1", "true", "yes")
 
 
 FIELD_RE = re.compile(r"pool:(?P<pool>\S+)\s+release:(?P<release>\S+)\s+upstream_status:(?P<upstream_status>\S+)\s+upstream_addr:(?P<upstream_addr>\S+)\s+request_time:(?P<request_time>\S+)\s+upstream_response_time:(?P<upstream_response_time>\S+)")
@@ -36,7 +37,7 @@ FIELD_RE = re.compile(r"pool:(?P<pool>\S+)\s+release:(?P<release>\S+)\s+upstream
 
 def send_slack_alert(text: str, title: str = "Alert"):
 	if not SLACK_WEBHOOK_URL:
-		print("SLACK_WEBHOOK_URL not set; skipping alert:", text)
+		print("SLACK_WEBHOOK_URL not set; skipping alert:", text, flush=True)
 		return False
 	payload = {
 		"username": "log-watcher",
@@ -54,10 +55,10 @@ def send_slack_alert(text: str, title: str = "Alert"):
 	try:
 		r = requests.post(SLACK_WEBHOOK_URL, json=payload, timeout=5)
 		r.raise_for_status()
-		print(f"Slack alert sent: {title}")
+		print(f"Slack alert sent: {title}", flush=True)
 		return True
 	except Exception as e:
-		print("Failed to send Slack alert:", e)
+		print("Failed to send Slack alert:", e, flush=True)
 		return False
 
 
@@ -105,7 +106,7 @@ def main():
 
 	for line in tail_file(LOG_PATH):
 		parsed = parse_line(line)
-		if not parsed:
+			print("Starting log watcher. Log path:", LOG_PATH, "DEBUG=" + str(WATCHER_DEBUG), flush=True)
 			# Could not parse; skip
 			continue
 
@@ -141,6 +142,8 @@ def main():
 			now = datetime.utcnow()
 			if MAINTENANCE_MODE:
 				print("Maintenance mode ON: suppressing error-rate alert")
+					if WATCHER_DEBUG:
+						print(f"window append: status={upstream_status} is_err={is_err} window_size={len(window)}", flush=True)
 			elif (now - last_error_alert).total_seconds() > ALERT_COOLDOWN_SEC:
 				text = (
 					f"High upstream 5xx error rate detected: {error_rate:.2f}% over last {len(window)} requests\n"
