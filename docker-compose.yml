@@ -19,6 +19,13 @@ services:
       - APP_POOL=green
     restart: unless-stopped
   
+  log_watcher:
+    build: ./log_watcher
+    env_file: .env
+    volumes:
+      - nginx_logs:/var/log/nginx
+    restart: unless-stopped
+
   nginx:
     build: ./nginx
     ports:
@@ -30,3 +37,9 @@ services:
       - blue_app
       - green_app
     restart: unless-stopped
+    volumes:
+      - nginx_logs:/var/log/nginx
+
+volumes:
+  nginx_logs:
+    driver: local
