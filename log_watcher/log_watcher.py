@@ -62,12 +62,17 @@ def send_slack_alert(text: str, title: str = "Alert"):
 
 
 def tail_file(path):
-	# Similar to 'tail -F' behaviour for appended lines
+	import io
+
 	while not os.path.exists(path):
 		time.sleep(0.5)
 	with open(path, "r", encoding="utf-8", errors="ignore") as fh:
-		# Seek to end, then yield new lines
-		fh.seek(0, os.SEEK_END)
+		# Try to seek to the end; if the underlying stream doesn't support seek, continue reading
+		try:
+			fh.seek(0, os.SEEK_END)
+		except (io.UnsupportedOperation, OSError):
+			pass
+
 		while True:
 			line = fh.readline()
 			if not line:
