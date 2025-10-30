@@ -1,0 +1,32 @@
+services:
+  blue_app:
+    image: ${BLUE_IMAGE}
+    ports:
+      - "8081:${PORT:-3000}"
+    environment:
+      - PORT=${PORT:-3000}
+      - RELEASE_ID=${RELEASE_ID_BLUE}
+      - APP_POOL=blue
+    restart: unless-stopped
+
+  green_app:
+    image: ${GREEN_IMAGE}
+    ports:
+      - "8082:${PORT:-3000}"
+    environment:
+      - PORT=${PORT:-3000}
+      - RELEASE_ID=${RELEASE_ID_GREEN}
+      - APP_POOL=green
+    restart: unless-stopped
+  
+  nginx:
+    build: ./nginx
+    ports:
+      - "8080:80"
+    environment:
+      - ACTIVE_POOL=${ACTIVE_POOL:-blue}
+      - PORT=${PORT:-3000}
+    depends_on:
+      - blue_app
+      - green_app
+    restart: unless-stopped
