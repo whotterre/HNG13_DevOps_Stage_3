@@ -32,8 +32,6 @@ MAINTENANCE_MODE = os.getenv("MAINTENANCE_MODE", "false").lower() in ("1", "true
 WATCHER_DEBUG = os.getenv("WATCHER_DEBUG", "false").lower() in ("1", "true", "yes")
 
 
-KEY_VAL_RE = re.compile(r"(?P<key>[a-zA-Z0-9_+-]+):(?P<val>.*?)(?=\s+[a-zA-Z0-9_+-]+:|$)")
-
 
 def send_slack_alert(text: str, title: str = "Alert") -> bool:
     """Post a simple alert to Slack using the incoming webhook URL from env."""
@@ -86,18 +84,26 @@ def tail_file(path: str):
 
 
 def parse_line(line: str):
-    """Parse key:value pairs from the log line and return a dict.
+    """Extract expected keys from the log line and return a dict.
 
-    Uses a liberal regex that allows values to contain commas and spaces
-    (e.g. "upstream_status:500, 304"). Returns None if no pairs found.
+    This focuses only on the keys we care about (pool, release, upstream_status,
+    upstream_addr, request_time, upstream_response_time). It tolerates comma-separated
+    values like '500, 304' and trims whitespace.
     """
-    pairs = KEY_VAL_RE.findall(line)
-    if not pairs:
-        return None
+    keys = [
+        "pool",
+        "release",
+        "upstream_status",
+        "upstream_addr",
+        "request_time",
+        "upstream_response_time",
+    ]
     data = {}
-    for key, val in pairs:
-        data[key.lower()] = val.strip()
-    return data
+    for k in keys:
+        m = re.search(rf"{k}:(?P<val>.*?)(?=\s+[a-zA-Z0-9_+-]+:|$)", line)
+        if m:
+            data[k] = m.group("val").strip()
+    return data if data else None
 
 
 def is_5xx(status_str: str) -> bool:
