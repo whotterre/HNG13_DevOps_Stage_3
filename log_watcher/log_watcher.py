@@ -141,7 +141,12 @@ def main() -> None:
             continue
 
         if WATCHER_DEBUG:
-            print("parsed:", parsed, flush=True)
+            try:
+                import json as _json
+
+                print("parsed:", _json.dumps(parsed, ensure_ascii=False), flush=True)
+            except Exception:
+                print("parsed:", parsed, flush=True)
 
         pool = parsed.get("pool")
         upstream_status = parsed.get("upstream_status")
