@@ -106,9 +106,9 @@ def main():
 
 	for line in tail_file(LOG_PATH):
 		parsed = parse_line(line)
-			print("Starting log watcher. Log path:", LOG_PATH, "DEBUG=" + str(WATCHER_DEBUG), flush=True)
-			# Could not parse; skip
-			continue
+		print("Starting log watcher. Log path:", LOG_PATH, "DEBUG=" + str(WATCHER_DEBUG), flush=True)
+		# Could not parse; skip
+		continue
 
 		pool = parsed.get("pool")
 		upstream_status = parsed.get("upstream_status") or parsed.get("status")
